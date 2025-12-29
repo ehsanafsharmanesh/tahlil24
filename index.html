@@ -81,20 +81,25 @@
       errBox.textContent="";
     }
 
-    async function apiLogin(code, password){
+   async function apiLogin(code, password){
       if(!API_BASE_URL) return { token: "local", code };
-      const res = await fetch(API_BASE_URL + "/api/login", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ code, password })
+      
+      // حذف "/api/login" از انتهای آدرس و اضافه کردن action برای گوگل شیت
+      const res = await fetch(API_BASE_URL, {
+        method: "POST",
+        body: JSON.stringify({ 
+          action: "login", 
+          code: code, 
+          password: password 
+        })
       });
+
       if(!res.ok){
         const t = await res.text();
         throw new Error(t || "Login failed");
       }
-      return await res.json(); // {token, code}
+      return await res.json(); // دریافت {status, code, history} از گوگل
     }
-
     document.querySelectorAll("[data-target]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         nextPage = btn.getAttribute("data-target");
