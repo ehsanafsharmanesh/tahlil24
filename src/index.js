@@ -1,42 +1,57 @@
+// src/index.js
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
 async function handleRequest(request) {
-  const url = new URL(request.url)
+  const url = new URL(request.url);
 
-  // تنظیم هدرهای CORS برای اجازه دسترسی از همه جا یا فقط سایت شما
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*", // یا آدرس سایت خود را بگذارید
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  }
+  if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // مدیریت درخواست‌های پیش‌پرواز (Preflight)
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+  // ۱. بخش ورود
   if (url.pathname === "/api/login" && request.method === "POST") {
-    try {
-      const { code, password } = await request.json()
+    const { code, password } = await request.json();
+    const userData = await USERS.get(code); // دریافت اطلاعات از KV
 
-      // بررسی کد و پسورد (طبق فایل اصلی شما)
-      if (code === "tahsili36" && password === "1400") {
-        const token = "static_token_example_123456789"; 
-        return new Response(JSON.stringify({ token, code }), {
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.password === password) {
+        return new Response(JSON.stringify({ token: "auth_" + code, code }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
-        })
-      } else {
-        return new Response("Invalid credentials", { 
-          status: 400,
-          headers: corsHeaders 
-        })
+        });
       }
-    } catch (e) {
-      return new Response("Bad Request", { status: 400, headers: corsHeaders })
     }
+    return new Response("کد یا رمز عبور اشتباه است", { status: 401, headers: corsHeaders });
   }
 
-  return new Response("Hello World", { status: 200, headers: corsHeaders })
+  // ۲. بخش ذخیره تحلیل و داده‌ها
+  if (url.pathname === "/api/save" && request.method === "POST") {
+    const { code, newData } = await request.json();
+    let userData = JSON.parse(await USERS.get(code) || "{}");
+    
+    // اضافه کردن داده جدید به تاریخچه (ارتقای تحلیل)
+    if (!userData.history) userData.history = [];
+    userData.history.push({ ...newData, timestamp: new Date().toISOString() });
+    
+    await USERS.put(code, JSON.stringify(userData));
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  }
+
+  // ۳. بخش دریافت داده‌های پروفایل
+  if (url.pathname === "/api/get-profile" && request.method === "POST") {
+    const { code } = await request.json();
+    const userData = await USERS.get(code);
+    return new Response(userData, { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  return new Response("Not Found", { status: 404, headers: corsHeaders });
 }
