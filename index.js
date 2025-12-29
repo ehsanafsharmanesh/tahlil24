@@ -1,57 +1,31 @@
-// src/index.js
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Users");
+  var data = JSON.parse(e.postData.contents);
+  var rows = sheet.getDataRange().getValues();
+  
+  function createResponse(obj) {
+    return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+  }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-
-  if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  // ۱. بخش ورود
-  if (url.pathname === "/api/login" && request.method === "POST") {
-    const { code, password } = await request.json();
-    const userData = await USERS.get(code); // دریافت اطلاعات از KV
-
-    if (userData) {
-      const user = JSON.parse(userData);
-      if (user.password === password) {
-        return new Response(JSON.stringify({ token: "auth_" + code, code }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+  // ورود و دریافت تاریخچه برای تحلیل
+  if (data.action === "login") {
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0].toString() === data.code.toString() && rows[i][1].toString() === data.password.toString()) {
+        return createResponse({ status: "success", code: data.code, history: rows[i][2] ? JSON.parse(rows[i][2]) : [] });
       }
     }
-    return new Response("کد یا رمز عبور اشتباه است", { status: 401, headers: corsHeaders });
+    return createResponse({ status: "error" });
   }
 
-  // ۲. بخش ذخیره تحلیل و داده‌ها
-  if (url.pathname === "/api/save" && request.method === "POST") {
-    const { code, newData } = await request.json();
-    let userData = JSON.parse(await USERS.get(code) || "{}");
-    
-    // اضافه کردن داده جدید به تاریخچه (ارتقای تحلیل)
-    if (!userData.history) userData.history = [];
-    userData.history.push({ ...newData, timestamp: new Date().toISOString() });
-    
-    await USERS.put(code, JSON.stringify(userData));
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+  // ذخیره و آپدیت تحلیل
+  if (data.action === "save") {
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0].toString() === data.code.toString()) {
+        var history = rows[i][2] ? JSON.parse(rows[i][2]) : [];
+        history.push(data.newData); // اضافه شدن به تحلیل قبلی
+        sheet.getRange(i + 1, 3).setValue(JSON.stringify(history));
+        return createResponse({ status: "success" });
+      }
+    }
   }
-
-  // ۳. بخش دریافت داده‌های پروفایل
-  if (url.pathname === "/api/get-profile" && request.method === "POST") {
-    const { code } = await request.json();
-    const userData = await USERS.get(code);
-    return new Response(userData, { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
-
-  return new Response("Not Found", { status: 404, headers: corsHeaders });
 }
