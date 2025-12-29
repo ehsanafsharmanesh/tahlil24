@@ -1,132 +1,53 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>پلنر تحصیلی و عادت‌ها</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>پلنر هوشمند | ورود</title>
   <style>
-    body{background:linear-gradient(135deg,#6a11cb,#2575fc);min-height:100vh;color:#fff}
-    .card{border:0;border-radius:18px}
-    .btn-big{padding:18px 16px;border-radius:16px;font-size:1.05rem;font-weight:700}
-    .glass{background:rgba(255,255,255,.12);backdrop-filter:blur(10px)}
-    .brand{opacity:.95}
+    body { background: #0f172a; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #1e293b; padding: 30px; border-radius: 24px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+    button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    .error { color: #f87171; font-size: 13px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="container py-5">
-    <div class="text-center brand mb-4">
-      <h1 class="fw-bold mb-2">پنل پلنر دانش‌آموز</h1>
-      <div class="opacity-75">ورود با «کد» + «رمز»</div>
-    </div>
-
-    <div class="row g-3 justify-content-center">
-      <div class="col-12 col-md-7">
-        <div class="card glass p-3">
-          <div class="d-grid gap-3">
-            <button class="btn btn-light btn-big" data-target="study.html">ورود اطلاعات پلنر تحصیلی</button>
-            <button class="btn btn-light btn-big" data-target="habits.html">ورود اطلاعات پلنر عادت‌ها</button>
-            <button class="btn btn-outline-light btn-big" data-target="analysis.html">تحلیل پلنرها</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="text-center mt-4 opacity-75 small">
-      نکته2: برای ذخیره‌سازی روی گیت‌هاب، باید API را طبق README فعال کنید.
-    </div>
+  <div class="card">
+    <h2 style="margin-bottom: 5px;">خوش آمدید</h2>
+    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 25px;">کد و رمز خود را وارد کنید</p>
+    <input type="text" id="c" placeholder="کد کاربری (tahsili36)">
+    <input type="password" id="p" placeholder="رمز عبور">
+    <div id="m" class="error"></div>
+    <button onclick="login()" id="b">ورود به پنل تحلیل</button>
   </div>
 
-  <!-- Login Modal -->
-  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-dark" style="border-radius:18px">
-        <div class="modal-header">
-          <h5 class="modal-title">ورود</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">کد دانش‌آموز</label>
-            <input id="codeInput" class="form-control" placeholder="مثلاً: tahsili38" autocomplete="username">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">رمز</label>
-            <input id="passInput" type="password" class="form-control" placeholder="رمز اختصاصی" autocomplete="current-password">
-          </div>
-          <div id="loginError" class="text-danger small mt-2 d-none"></div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">لغو</button>
-          <button id="loginBtn" class="btn btn-primary">ورود</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    const API_BASE_URL = "https://script.google.com/macros/s/AKfycbxK4-FuXieROmOcejv9882k60zfGrQ8PpyWntHTGyypRNZSFg_kUihUiI2WedMaduJf/exec"; // Example: "https://planner-api.your-subdomain.workers.dev"
-    let nextPage = "study.html";
-    const modal = new bootstrap.Modal(document.getElementById("loginModal"));
-    const errBox = document.getElementById("loginError");
+    const API = "لینک_گوگل_اسکریپت_شما"; // آدرس نهایی گوگل را اینجا بگذارید
 
-    function showError(msg){
-      errBox.textContent = msg;
-      errBox.classList.remove("d-none");
-    }
+    async function login() {
+      const btn = document.getElementById('b');
+      const code = document.getElementById('c').value;
+      const pass = document.getElementById('p').value;
+      if(!code || !pass) return;
 
-    function clearError(){
-      errBox.classList.add("d-none");
-      errBox.textContent="";
-    }
-
-   async function apiLogin(code, password){
-      if(!API_BASE_URL) return { token: "local", code };
-      
-      // حذف "/api/login" از انتهای آدرس و اضافه کردن action برای گوگل شیت
-      const res = await fetch(API_BASE_URL, {
-        method: "POST",
-        body: JSON.stringify({ 
-          action: "login", 
-          code: code, 
-          password: password 
-        })
-      });
-
-      if(!res.ok){
-        const t = await res.text();
-        throw new Error(t || "Login failed");
+      btn.innerText = "در حال بررسی...";
+      try {
+        const r = await fetch(API, { method: "POST", body: JSON.stringify({ action:"login", code, password:pass }) });
+        const d = await r.json();
+        if(d.status === "success") {
+          localStorage.setItem("p_code", code);
+          localStorage.setItem("p_api", API);
+          window.location.href = "study.html";
+        } else {
+          document.getElementById('m').innerText = "کد یا رمز اشتباه است";
+          btn.innerText = "ورود به پنل تحلیل";
+        }
+      } catch(e) {
+        document.getElementById('m').innerText = "خطا در اتصال به سرور";
+        btn.innerText = "ورود به پنل تحلیل";
       }
-      return await res.json(); // دریافت {status, code, history} از گوگل
     }
-    document.querySelectorAll("[data-target]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        nextPage = btn.getAttribute("data-target");
-        document.getElementById("codeInput").value = localStorage.getItem("planner_code") || "";
-        document.getElementById("passInput").value = "";
-        clearError();
-        modal.show();
-        setTimeout(()=>document.getElementById("codeInput").focus(), 120);
-      });
-    });
-
-    document.getElementById("loginBtn").addEventListener("click", async ()=>{
-      const code = (document.getElementById("codeInput").value || "").trim();
-      const password = document.getElementById("passInput").value || "";
-      if(!code) return showError("کد را وارد کنید.");
-      if(!password) return showError("رمز را وارد کنید.");
-      clearError();
-      try{
-        const r = await apiLogin(code, password);
-        localStorage.setItem("planner_code", r.code || code);
-        localStorage.setItem("planner_token", r.token || "local");
-        localStorage.setItem("planner_api", API_BASE_URL);
-        window.location.href = nextPage;
-      }catch(e){
-        showError("ورود ناموفق: " + e.message);
-      }
-    });
   </script>
 </body>
 </html>
