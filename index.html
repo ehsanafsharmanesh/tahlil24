@@ -2,51 +2,45 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>پلنر هوشمند | ورود</title>
   <style>
-    body { background: #0f172a; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    .card { background: #1e293b; padding: 30px; border-radius: 24px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+    body { background: #0f172a; color: white; font-family: Tahoma; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #1e293b; padding: 30px; border-radius: 24px; width: 320px; text-align: center; }
     input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
-    button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .error { color: #f87171; font-size: 13px; margin-top: 10px; }
+    button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2 style="margin-bottom: 5px;">خوش آمدید</h2>
-    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 25px;">کد و رمز خود را وارد کنید</p>
-    <input type="text" id="c" placeholder="کد کاربری (tahsili36)">
+    <h3>ورود به پنل</h3>
+    <input type="text" id="c" placeholder="کد کاربری">
     <input type="password" id="p" placeholder="رمز عبور">
-    <div id="m" class="error"></div>
-    <button onclick="login()" id="b">ورود به پنل تحلیل</button>
+    <button onclick="login()" id="b">تایید ورود</button>
   </div>
 
   <script>
-    const API = "https://script.google.com/macros/s/AKfycbxK4-FuXieROmOcejv9882k60zfGrQ8PpyWntHTGyypRNZSFg_kUihUiI2WedMaduJf/exec"; // آدرس نهایی گوگل را اینجا بگذارید
+    // لینک Web App URL گوگل را اینجا بگذارید
+    const API = "https://script.google.com/macros/s/AKfycbyPvShqlh2tDxY-PyuEc7IdgR4ymBUzIQrzQpFrgn68GEkCtQ9Ij-k6w4zxpgLL9INQ/exec";
 
     async function login() {
-      const btn = document.getElementById('b');
       const code = document.getElementById('c').value;
       const pass = document.getElementById('p').value;
-      if(!code || !pass) return;
-
-      btn.innerText = "در حال بررسی...";
+      document.getElementById('b').innerText = "در حال اتصال...";
+      
       try {
-        const r = await fetch(API, { method: "POST", body: JSON.stringify({ action:"login", code, password:pass }) });
+        const r = await fetch(API, { 
+          method: "POST", 
+          body: JSON.stringify({ action: "login", code: code, password: pass }) 
+        });
         const d = await r.json();
         if(d.status === "success") {
           localStorage.setItem("p_code", code);
           localStorage.setItem("p_api", API);
           window.location.href = "study.html";
-        } else {
-          document.getElementById('m').innerText = "کد یا رمز اشتباه است";
-          btn.innerText = "ورود به پنل تحلیل";
-        }
-      } catch(e) {
-        document.getElementById('m').innerText = "خطا در اتصال به سرور";
-        btn.innerText = "ورود به پنل تحلیل";
-      }
+        } else { alert("خطا در کد یا رمز"); }
+      } catch(e) { alert("خطای اتصال به گوگل"); }
+      document.getElementById('b').innerText = "تایید ورود";
     }
   </script>
 </body>
