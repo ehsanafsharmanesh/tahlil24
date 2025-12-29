@@ -2,65 +2,45 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>تحلیل پیشرفت تحصیلی</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تحلیل پیشرفت</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; margin: 0; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-    .box { background: #1e293b; padding: 15px; border-radius: 20px; text-align: center; border: 1px solid #334155; }
-    .box span { color: #38bdf8; font-size: 24px; font-weight: bold; display: block; }
-    .form-box { background: #1e293b; padding: 20px; border-radius: 24px; margin-bottom: 25px; }
-    input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 12px; border: none; background: #0f172a; color: white; }
-    .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; }
-    canvas { background: #1e293b; border-radius: 20px; padding: 10px; width: 100% !important; }
+    body { background: #0f172a; color: white; font-family: Tahoma; padding: 20px; }
+    .box { background: #1e293b; padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 1px solid #334155; }
+    input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px; border: none; }
+    .btn { width: 100%; padding: 12px; background: #38bdf8; border: none; border-radius: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h3 id="user">دانش‌آموز</h3>
-    <button onclick="location.href='index.html'" style="background:none; border:1px solid #f87171; color:#f87171; border-radius:8px; padding:5px 10px;">خروج</button>
-  </div>
-
-  <div class="stat-grid">
-    <div class="box"><small>مجموع مطالعه</small><span id="totalH">0</span></div>
-    <div class="box"><small>تعداد کل تست</small><span id="totalT">0</span></div>
-  </div>
-
-  <div class="form-box">
-    <h4 style="margin-top:0">ثبت و ارتقای تحلیل روزانه</h4>
-    <input type="number" id="h" placeholder="ساعت مطالعه امروز">
-    <input type="number" id="t" placeholder="تعداد تست امروز">
-    <button class="btn" onclick="save()" id="sBtn">ذخیره و تحلیل مجدد</button>
+  <div class="box">سلام <span id="u">...</span></div>
+  
+  <div class="box">
+    <h4>ثبت امروز</h4>
+    <input type="number" id="h" placeholder="ساعت مطالعه">
+    <input type="number" id="t" placeholder="تعداد تست">
+    <button class="btn" onclick="save()" id="s">ذخیره و تحلیل</button>
   </div>
 
   <div class="box">
-    <h4 style="margin-top:0">نمودار رشد شما</h4>
     <canvas id="chart"></canvas>
   </div>
 
   <script>
     const API = localStorage.getItem("p_api");
     const CODE = localStorage.getItem("p_code");
-    document.getElementById('user').innerText = "پنل " + CODE;
+    document.getElementById('u').innerText = CODE;
 
-    async function fetchData() {
+    async function load() {
       const r = await fetch(API, { method: "POST", body: JSON.stringify({ action:"login", code:CODE, password:"" }) });
       const d = await r.json();
-      updateUI(d.history || []);
-    }
-
-    function updateUI(history) {
-      document.getElementById('totalH').innerText = history.reduce((s,i) => s + Number(i.h), 0) + "h";
-      document.getElementById('totalT').innerText = history.reduce((s,i) => s + Number(i.t), 0);
-      
+      const hist = d.history || [];
       const ctx = document.getElementById('chart').getContext('2d');
       new Chart(ctx, {
         type: 'line',
         data: {
-          labels: history.slice(-5).map(i => i.date),
-          datasets: [{ label: 'ساعت مطالعه', data: history.slice(-5).map(i => i.h), borderColor: '#38bdf8', tension: 0.4 }]
+          labels: hist.slice(-5).map(i => i.date),
+          datasets: [{ label: 'ساعت', data: hist.slice(-5).map(i => i.h), borderColor: '#38bdf8' }]
         }
       });
     }
@@ -68,20 +48,14 @@
     async function save() {
       const h = document.getElementById('h').value;
       const t = document.getElementById('t').value;
-      if(!h || !t) return;
-      document.getElementById('sBtn').innerText = "در حال تحلیل...";
-      
+      document.getElementById('s').innerText = "صبر کنید...";
       await fetch(API, {
         method: "POST",
-        body: JSON.stringify({
-          action: "save",
-          code: CODE,
-          newData: { date: new Date().toLocaleDateString('fa-IR'), h, t }
-        })
+        body: JSON.stringify({ action: "save", code: CODE, newData: { date: new Date().toLocaleDateString('fa-IR'), h, t } })
       });
       location.reload();
     }
-    fetchData();
+    load();
   </script>
 </body>
 </html>
