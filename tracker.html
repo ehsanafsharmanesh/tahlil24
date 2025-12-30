@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آنالیز عملکرد | آکادمی دکتر افشارمنش</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
+        body { background-color: #f0f2f5; font-family: 'Doran', sans-serif; padding-bottom: 50px; }
+        .chart-container { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .header-title { text-align: center; margin: 30px 0; font-weight: bold; color: #333; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px; padding: 15px; text-align: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 600px;">
+    <h3 id="pageTitle" class="header-title">در حال بارگذاری تحلیل...</h3>
+    
+    <div id="summaryBox" class="row g-2 mb-4 d-none">
+        <div class="col-6"><div class="stat-card"><small>میانگین ساعت</small><div id="avgStudy" class="h4">0</div></div></div>
+        <div class="col-6"><div class="stat-card"><small>مجموع تست</small><div id="totalTests" class="h4">0</div></div></div>
+    </div>
+
+    <div id="studyCharts" class="d-none">
+        <div class="chart-container">
+            <h6 class="text-center mb-3">تحلیل دروس تخصصی (ساعت، تشریحی، مارکدار)</h6>
+            <canvas id="studySpecChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h6 class="text-center mb-3">روند تراز آزمون‌ها</h6>
+            <canvas id="examChart"></canvas>
+        </div>
+    </div>
+
+    <div id="habitCharts" class="d-none">
+        <div class="chart-container">
+            <h6 class="text-center mb-3">پایداری در عادت‌ها (درصد موفقیت)</h6>
+            <canvas id="habitsRadarChart"></canvas>
+        </div>
+    </div>
+
+    <button class="btn btn-outline-secondary w-100" onclick="location.href='index.html'">بازگشت به داشبورد</button>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('type'); // 'study' or 'habits'
+    const profile = JSON.parse(localStorage.getItem("profile") || "{}");
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyJaeaBi301y227SSIEzoWO9G9MqJXSKfesvVca2vh7vsf207NRmLxxXCOkn-PaACf/exec";
+
+    window.onload = async () => {
+        if(mode === 'study') {
+            document.getElementById('pageTitle').innerText = "📊 ردیاب تحصیلی";
+            document.getElementById('studyCharts').classList.remove('d-none');
+            document.getElementById('summaryBox').classList.remove('d-none');
+            renderStudyData();
+        } else {
+            document.getElementById('pageTitle').innerText = "✅ ردیاب عادت‌ها";
+            document.getElementById('habitCharts').classList.remove('d-none');
+            renderHabitData();
+        }
+    };
+
+    async function renderStudyData() {
+        // دریافت دیتا از اسکریپت گوگل (فراخوانی اکشن جدید برای گرفتن کل تاریخچه کاربر)
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "getUserHistory", username: profile.username })
+        });
+        const res = await response.json();
+        const history = res.data; // آرایه‌ای از گزارش‌های قبلی
+
+        // ۱. نمودار ترکیبی تخصصی (ساعت مطالعه، سوال تشریحی، تست مارکدار)
+        new Chart(document.getElementById('studySpecChart'), {
+            type: 'bar',
+            data: {
+                labels: history.map(d => "هفته " + d.week),
+                datasets: [
+                    { label: 'ساعت مطالعه', data: history.map(d => d.studySpec), backgroundColor: '#4e73df', order: 2 },
+                    { label: 'سوال تشریحی', data: history.map(d => d.sumSpec), backgroundColor: '#1cc88a', order: 3 },
+                    { label: 'تست مارکدار', data: history.map(d => d.markedSpec), type: 'line', borderColor: '#e74a3b', fill: false, order: 1 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // ۲. نمودار جداگانه تراز آزمون
+        new Chart(document.getElementById('examChart'), {
+            type: 'line',
+            data: {
+                labels: history.filter(d => d.examScore > 0).map(d => "آزمون " + d.week),
+                datasets: [{
+                    label: 'تراز کسب شده',
+                    data: history.filter(d => d.examScore > 0).map(d => d.examScore),
+                    borderColor: '#f6c23e',
+                    backgroundColor: 'rgba(246, 194, 62, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            }
+        });
+    }
+
+    async function renderHabitData() {
+        // مشابه بالا دیتا دریافت و نمودار راداری یا دایره‌ای رسم می‌شود
+        // این بخش را برای کوتاه شدن فعلاً ساده می‌گذاریم
+    }
+</script>
+</body>
+</html>
