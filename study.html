@@ -5,7 +5,7 @@
     <title>دفترچه برنامه هفتگی | آکادمی دکتر افشارمنش</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        /* بارگذاری فونت‌های دوران از پوشه fonts */
+        /* لود فونت‌ها از پوشه fonts */
         @font-face {
             font-family: 'Doran';
             src: url('fonts/DoranFaNum-Light.ttf') format('truetype');
@@ -17,53 +17,30 @@
             font-weight: 700;
         }
 
-        body { 
-            background-color: #f8f9fa; 
-            font-family: 'Doran', Tahoma, sans-serif; 
-            font-weight: 300; 
-        }
-        
+        body { background-color: #f8f9fa; font-family: 'Doran', Tahoma, sans-serif; font-weight: 300; }
         .bold-text { font-weight: 700 !important; }
-
-        /* تنظیمات صفحه A4 عمودی برای پرینت */
-        .page-container { 
-            background: white; 
-            width: 210mm; 
-            min-height: 290mm; 
-            margin: 20px auto; 
-            padding: 30px 45px; 
-            border: 1px solid #ddd;
-            page-break-after: always; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between;
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1.5px solid #222; padding: 12px; text-align: center; vertical-align: middle; font-size: 15px; }
-        th { background-color: #f2f2f2; font-weight: 700; }
-
-        /* رنگ‌بندی ملایم درخواستی */
-        .bg-rest { background-color: #f0f7ff !important; color: #0056b3; } /* آبی بسیار ملایم */
-        .bg-exam { background-color: #f2faf2 !important; color: #1b5e20; } /* سبز بسیار ملایم */
-
-        .stamp-footer { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-top: 30px; 
-            border-top: 2px solid #222; 
-            padding-top: 15px; 
-        }
+        .no-print { background: white; padding: 20px; border-bottom: 3px solid #007bff; position: sticky; top: 0; z-index: 100; }
         
-        .logo-img { width: 140px; }
-        .no-print { background: white; padding: 25px; border-bottom: 3px solid #007bff; position: sticky; top: 0; z-index: 100; }
+        .page-container { 
+            background: white; width: 210mm; min-height: 290mm; 
+            margin: 20px auto; padding: 30px 45px; border: 1px solid #ddd;
+            page-break-after: always; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1.5px solid #000; padding: 10px; text-align: center; vertical-align: middle; }
+        th { background-color: #f8f9fa; }
+        .bg-rest { background-color: #f0f7ff !important; }
+        .bg-exam { background-color: #f2faf2 !important; }
+
+        .stamp-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-top: 2px solid #333; padding-top: 15px; }
+        .logo-img { width: 150px; height: auto; object-fit: contain; }
 
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
-            .page-container { margin: 0; border: none; width: 100%; height: auto; padding: 10mm; }
-            @page { size: A4 portrait; margin: 0; }
+            .page-container { margin: 0; border: none; width: 100%; height: auto; }
+            @page { size: A4 portrait; margin: 5mm; }
         }
     </style>
 </head>
@@ -71,31 +48,45 @@
 
 <div class="no-print">
     <div class="container text-center">
-        <h4 class="mb-3 bold-text">صدور دفترچه برنامه هفتگی (A4 عمودی)</h4>
+        <h4 class="mb-3 bold-text">صدور دفترچه برنامه هفتگی آکادمی</h4>
         <div class="row justify-content-center g-2">
             <div class="col-md-3">
                 <input type="text" id="weekInput" class="form-control text-center fs-5" placeholder="شماره برنامه (مثلاً 05)">
             </div>
             <div class="col-md-auto">
-                <button class="btn btn-primary px-4 bold-text" onclick="loadWeeklyData()">دریافت برنامه</button>
-                <button class="btn btn-success px-4 bold-text" onclick="handlePrint()">🖨️ چاپ دفترچه</button>
+                <button class="btn btn-primary px-4 bold-text" onclick="loadWeeklyData()">بارگذاری برنامه</button>
+                <button class="btn btn-success px-4 bold-text" onclick="window.print()">🖨️ چاپ دفترچه</button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="print-content">
-    </div>
+<div id="print-content"></div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8NJAfUez3wCUiRXthdSuRT0thlXL_bPS2rDXGpcJhb25wdejrhKvMZ5DjxlZLv6Nh/exec";
-    const studentCode = localStorage.getItem("planner_code") || "tahsili38";
+    const LOGO_URL = "https://lh3.googleusercontent.com/u/0/d/1yD5HwxYqRXZUdiYrlHg_fM-SVvZC_1yB=w1000-h1000-iv1"; // لینک اصلاح شده گوگل درایو
+    const studentCode = "tahsili38";
+
+    let allQuotes = [];
+
+    // تابع لود کردن جملات از فایل تکست گیت‌هاب
+    async function fetchQuotes() {
+        try {
+            const response = await fetch('quotes.txt');
+            const text = await response.text();
+            allQuotes = text.split('\n').filter(line => line.trim() !== "");
+        } catch (e) {
+            allQuotes = ["پیروزی در تداوم است."];
+        }
+    }
 
     async function loadWeeklyData() {
         const weekNum = document.getElementById('weekInput').value;
-        if(!weekNum) { alert("لطفاً شماره برنامه را وارد کنید."); return; }
+        if(!weekNum) return;
         
-        document.getElementById('print-content').innerHTML = "<div class='text-center mt-5'><div class='spinner-border text-primary'></div><p class='mt-2'>در حال ترکیب واحدها و ساخت صفحات...</p></div>";
+        await fetchQuotes(); // اول جملات را بگیر
+        document.getElementById('print-content').innerHTML = "<p class='text-center mt-5'>در حال آماده‌سازی برنامه...</p>";
         
         try {
             const res = await fetch(SCRIPT_URL, {
@@ -103,15 +94,8 @@
                 body: JSON.stringify({ action: "getWeekPlan", studentCode: studentCode, weekNum: weekNum })
             });
             const result = await res.json();
-            
-            if(result.status === "success") {
-                renderPages(result.data, weekNum);
-            } else {
-                document.getElementById('print-content').innerHTML = "<p class='text-center text-danger mt-5'>اطلاعاتی یافت نشد. شماره برنامه را چک کنید.</p>";
-            }
-        } catch (e) {
-            document.getElementById('print-content').innerHTML = "<p class='text-center text-danger mt-5'>خطا در اتصال! فیلترشکن را بررسی کنید.</p>";
-        }
+            if(result.status === "success") renderPages(result.data, weekNum);
+        } catch (e) { alert("خطا در اتصال به سرور"); }
     }
 
     function renderPages(data, weekNum) {
@@ -119,37 +103,34 @@
         container.innerHTML = "";
 
         data.forEach((day) => {
+            // انتخاب یک جمله تصادفی برای هر روز
+            const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : "موفقیت تکرار تلاش‌های کوچک است.";
+
             let html = `
                 <div class="page-container">
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="bold-text" style="color:#003366;">برنامه روز ${day.dayName}</h2>
+                            <h2 class="bold-text">برنامه روز ${day.dayName}</h2>
                             <div class="text-end">
-                                <div class="bold-text">نام داوطلب: ${studentCode}</div>
-                                <div>تاریخ: ${day.date} | کد برنامه: ${weekNum}</div>
+                                <div class="bold-text">کد مراجع: ${studentCode}</div>
+                                <div>تاریخ: ${day.date} | هفته: ${weekNum}</div>
                             </div>
                         </div>
                         <table>
                             <thead>
-                                <tr>
-                                    <th style="width:25%">بازه زمانی</th>
-                                    <th>موضوع مطالعه / فعالیت آموزشی</th>
-                                    <th style="width:15%">تایید</th>
-                                </tr>
+                                <tr><th style="width:25%">زمان</th><th>موضوع مطالعه</th><th style="width:15%">تایید</th></tr>
                             </thead>
                             <tbody>`;
 
-            // منطق هوشمند ادغام (Merge) برای درس‌های تکراری یا ستون‌های خالی
             let mergedTasks = [];
             for (let i = 0; i < day.tasks.length; i++) {
                 let current = day.tasks[i];
-                let startTime = current.time.split('-')[0].trim();
-                let endTime = current.time.split('-')[1]?.trim() || "";
-                let lesson = current.lesson ? current.lesson.trim() : "";
+                let startTime = current.time.split('-')[0];
+                let endTime = current.time.split('-')[1] || "";
+                let lesson = current.lesson;
 
-                // بررسی ردیف‌های بعدی: اگر درس تکراری بود یا درس بعدی خالی بود، ادغام کن
-                while (i + 1 < day.tasks.length && (day.tasks[i + 1].lesson === current.lesson || !day.tasks[i + 1].lesson) && lesson !== "") {
-                    endTime = day.tasks[i + 1].time.split('-')[1]?.trim() || day.tasks[i + 1].time.split('-')[0].trim();
+                while (i + 1 < day.tasks.length && (day.tasks[i + 1].lesson === lesson || !day.tasks[i + 1].lesson) && lesson !== "") {
+                    endTime = day.tasks[i + 1].time.split('-')[1] || day.tasks[i + 1].time;
                     i++;
                 }
                 mergedTasks.push({ time: `${startTime} - ${endTime}`, lesson: lesson });
@@ -162,41 +143,27 @@
 
                 html += `
                     <tr class="${rowClass}">
-                        <td class="bold-text" dir="ltr">${task.time}</td>
+                        <td class="bold-text">${task.time}</td>
                         <td>${task.lesson}</td>
-                        <td class="fs-4">${task.lesson && !task.lesson.includes("استراحت") ? "✔️" : ""}</td>
+                        <td>${task.lesson && !task.lesson.includes("استراحت") ? "✔️" : ""}</td>
                     </tr>`;
             });
-
-            // پر کردن فضای خالی صفحه تا ۱۰ ردیف برای زیبایی بصری
-            const emptyCount = 10 - mergedTasks.length;
-            for(let j=0; j < (emptyCount > 0 ? emptyCount : 2); j++) {
-                html += `<tr style="height:45px"><td></td><td></td><td></td></tr>`;
-            }
 
             html += `</tbody></table>
                     </div>
                     <div class="stamp-footer">
                         <div style="max-width:70%">
-                            <strong class="bold-text">جمله انگیزشی هفته:</strong>
-                            <p style="margin-top:8px; font-size:16px; line-height:1.6;">${day.quote || 'موفقیت مجموع تلاش‌های کوچکی است که هر روز تکرار می‌شوند.'}</p>
+                            <strong class="bold-text">حرف روز:</strong>
+                            <p style="margin-top:5px; font-size:16px;">${randomQuote}</p>
                         </div>
                         <div class="text-center">
-                            <img src="https://raw.githubusercontent.com/ehsanafsharmanesh/ehsanafsharmanesh.github.io/main/newlogo.jpg" class="logo-img">
-                            <div class="bold-text" style="font-size:13px; margin-top:5px;">آکادمی دکتر افشارمنش</div>
+                            <img src="${LOGO_URL}" class="logo-img" onerror="this.src='https://raw.githubusercontent.com/ehsanafsharmanesh/ehsanafsharmanesh.github.io/main/newlogo.jpg'">
+                            <div class="bold-text" style="font-size:12px; margin-top:5px;">آکادمی دکتر افشارمنش</div>
                         </div>
                     </div>
                 </div>`;
             container.innerHTML += html;
         });
-    }
-
-    function handlePrint() {
-        if(!document.getElementById('print-content').innerText.trim()) {
-            alert("ابتدا برنامه را بارگذاری کنید.");
-            return;
-        }
-        window.print();
     }
 </script>
 </body>
