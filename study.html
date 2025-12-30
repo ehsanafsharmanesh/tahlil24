@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مطالعاتی آکادمی</title>
+    <title>پنل مطالعاتی آکادمی | دکتر افشارمنش</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
         body { background-color: #f0f2f5; font-family: 'Tahoma', sans-serif; }
         .exam-banner { background: linear-gradient(45deg, #ff4b2b, #ff416c); color: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; animation: pulse 2s infinite; }
         @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.02);} 100% {transform: scale(1);} }
         .plan-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-right: 6px solid #007bff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .stamp-box { display: none; text-align: left; margin-top: 20px; }
+        
+        /* بخش پرینت در حالت عادی مخفی است */
+        #print-section { display: none; }
+
         @media print {
             .no-print { display: none !important; }
-            .stamp-box { display: block !important; }
-            body { background: white; }
+            #print-section { display: block !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; direction: rtl; }
+            .print-table th, .print-table td { border: 1px solid #333; padding: 10px; text-align: center; font-size: 14px; }
+            .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            .stamp-footer { position: fixed; bottom: 0; width: 100%; border-top: 2px solid #333; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+            .stamp-img { width: 150px; }
         }
     </style>
 </head>
@@ -30,59 +38,95 @@
         </div>
 
         <div id="plan-list">
-            </div>
+            <p class="text-center text-muted">تاریخ را انتخاب کنید...</p>
+        </div>
 
-        <button class="btn btn-success w-100 mt-4 py-3 fw-bold" onclick="window.print()">🖨️ چاپ برنامه این هفته</button>
+        <button class="btn btn-success w-100 mt-4 py-3 fw-bold" onclick="window.print()">🖨️ چاپ برنامه روزانه</button>
     </div>
 
-    <div class="stamp-box">
-        <div style="border-top: 2px solid #333; padding-top: 10px; display: flex; justify-content: space-between;">
-            <div><p id="print-quote" style="font-style: italic;"></p></div>
-            <div>
-                <img src="https://drive.google.com/thumbnail?id=1yD5HwxYqRXZUdiYrlHg_fM-SVvZC_1yB&sz=w300" alt="مهر دکتر افشارمنش" style="width: 150px;">
-                <p class="text-center">تایید مشاور</p>
+    <div id="print-section">
+        <div class="print-header">
+            <h3>برنامه مطالعاتی آکادمی دکتر افشارمنش</h3>
+            <p>دانش‌آموز: <span id="print-student-id"></span> | هفته: <span id="print-week"></span></p>
+        </div>
+        
+        <table class="print-table" id="print-table-content">
+            </table>
+
+        <div class="stamp-footer">
+            <div style="max-width: 60%;">
+                <strong>جمله انگیزشی هفته:</strong>
+                <p id="print-quote" style="font-style: italic; margin-top: 5px;"></p>
+            </div>
+            <div class="text-center">
+                <img src="https://drive.google.com/thumbnail?id=1yD5HwxYqRXZUdiYrlHg_fM-SVvZC_1yB&sz=w300" class="stamp-img" alt="مهر">
+                <p style="margin: 0;">تایید مشاور</p>
             </div>
         </div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyJaeaBi301y227SSIEzoWO9G9MqJXSKfesvVca2vh7vsf207NRmLxxXCOkn-PaACf/exec";
-        const studentCode = "tahsili38"; // این را از لاگین می‌گیرید
+        // دریافت کد از حافظه (اگر نبود از کد پیش‌فرض استفاده می‌کند)
+        const studentCode = localStorage.getItem("planner_code") || "tahsili38"; 
 
         async function fetchData() {
             const date = document.getElementById('dateInput').value;
             if(!date) return;
             
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "getDayPlan", studentCode: studentCode, date: date })
-            });
-            const data = await response.json();
-
-            if(data.status === "success") {
-                // نمایش آزمون
-                if(data.exam) {
-                    document.getElementById('exam-container').innerHTML = `
-                        <div class="exam-banner shadow">
-                            <strong>📢 توجه:</strong> امروز ${data.exam} داری!
-                        </div>`;
-                } else {
-                    document.getElementById('exam-container').innerHTML = "";
-                }
-
-                // نمایش دروس
-                let html = "";
-                data.plan.forEach(item => {
-                    html += `
-                        <div class="plan-card">
-                            <div><small class="text-muted">${item.time}</small><br><strong>${item.lesson}</strong></div>
-                            <input type="checkbox" class="form-check-input" style="width:25px; height:25px">
-                        </div>`;
+            document.getElementById('plan-list').innerHTML = "<p class='text-center'>در حال بارگذاری...</p>";
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "getDayPlan", studentCode: studentCode, date: date })
                 });
-                document.getElementById('plan-list').innerHTML = html;
-                document.getElementById('print-quote').innerText = data.quote;
-            } else {
-                alert("برنامه‌ای برای این تاریخ یافت نشد.");
+                const data = await response.json();
+
+                if(data.status === "success") {
+                    // ۱. مدیریت آزمون
+                    if(data.exam) {
+                        document.getElementById('exam-container').innerHTML = `
+                            <div class="exam-banner shadow">
+                                <strong>📢 رویداد:</strong> ${data.exam}
+                            </div>`;
+                    } else {
+                        document.getElementById('exam-container').innerHTML = "";
+                    }
+
+                    // ۲. نمایش در موبایل و آماده‌سازی جدول پرینت
+                    let mobileHtml = "";
+                    let printHtml = "<thead><tr><th>زمان</th><th>برنامه</th><th>تایید</th></tr></thead><tbody>";
+                    
+                    data.plan.forEach(item => {
+                        mobileHtml += `
+                            <div class="plan-card">
+                                <div><small class="text-muted">${item.time}</small><br><strong>${item.lesson}</strong></div>
+                                <input type="checkbox" class="form-check-input" style="width:25px; height:25px">
+                            </div>`;
+                        
+                        printHtml += `
+                            <tr>
+                                <td>${item.time}</td>
+                                <td>${item.lesson}</td>
+                                <td>[ ]</td>
+                            </tr>`;
+                    });
+                    printHtml += "</tbody>";
+
+                    document.getElementById('plan-list').innerHTML = mobileHtml;
+                    document.getElementById('print-table-content').innerHTML = printHtml;
+                    
+                    // ۳. پر کردن اطلاعات فوتر و هدر پرینت
+                    document.getElementById('print-quote').innerText = data.quote || "با تلاش به قله‌ها می‌رسی."; [cite: 3]
+                    document.getElementById('print-student-id').innerText = studentCode; [cite: 1]
+                    document.getElementById('print-week').innerText = data.week || "---";
+
+                } else {
+                    document.getElementById('plan-list').innerHTML = "<p class='text-danger text-center'>برنامه‌ای یافت نشد. فرمت تاریخ را چک کنید.</p>";
+                }
+            } catch (e) {
+                document.getElementById('plan-list').innerHTML = "<p class='text-danger text-center'>خطا در اتصال به سرور.</p>";
             }
         }
     </script>
