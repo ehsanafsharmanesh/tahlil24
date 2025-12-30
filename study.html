@@ -2,10 +2,10 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>دفترچه برنامه هفتگی | آکادمی دکتر افشارمنش</title>
+    <title>دفترچه برنامه روزانه | آکادمی دکتر افشارمنش</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        /* لود فونت‌ها از پوشه fonts */
+        /* لود فونت‌ها از پوشه اختصاصی fonts */
         @font-face {
             font-family: 'Doran';
             src: url('fonts/DoranFaNum-Light.ttf') format('truetype');
@@ -19,8 +19,11 @@
 
         body { background-color: #f8f9fa; font-family: 'Doran', Tahoma, sans-serif; font-weight: 300; }
         .bold-text { font-weight: 700 !important; }
+        
+        /* تنظیمات نمایش وب */
         .no-print { background: white; padding: 20px; border-bottom: 3px solid #007bff; position: sticky; top: 0; z-index: 100; }
         
+        /* تنظیمات صفحه A4 عمودی */
         .page-container { 
             background: white; width: 210mm; min-height: 290mm; 
             margin: 20px auto; padding: 30px 45px; border: 1px solid #ddd;
@@ -30,11 +33,12 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1.5px solid #000; padding: 10px; text-align: center; vertical-align: middle; }
         th { background-color: #f8f9fa; }
-        .bg-rest { background-color: #f0f7ff !important; }
-        .bg-exam { background-color: #f2faf2 !important; }
+        
+        .bg-rest { background-color: #f0f7ff !important; color: #0056b3; }
+        .bg-exam { background-color: #f2faf2 !important; color: #1b5e20; }
 
         .stamp-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-top: 2px solid #333; padding-top: 15px; }
-        .logo-img { width: 150px; height: auto; object-fit: contain; }
+        .logo-img { width: 140px; height: auto; }
 
         @media print {
             .no-print { display: none !important; }
@@ -46,18 +50,12 @@
 </head>
 <body>
 
-<div class="no-print">
-    <div class="container text-center">
-        <h4 class="mb-3 bold-text">صدور دفترچه برنامه هفتگی آکادمی</h4>
-        <div class="row justify-content-center g-2">
-            <div class="col-md-3">
-                <input type="text" id="weekInput" class="form-control text-center fs-5" placeholder="شماره برنامه (مثلاً 05)">
-            </div>
-            <div class="col-md-auto">
-                <button class="btn btn-primary px-4 bold-text" onclick="loadWeeklyData()">بارگذاری برنامه</button>
-                <button class="btn btn-success px-4 bold-text" onclick="window.print()">🖨️ چاپ دفترچه</button>
-            </div>
-        </div>
+<div class="no-print text-center">
+    <h4 class="mb-3 bold-text">صدور کارتکس برنامه هفتگی</h4>
+    <div class="d-flex justify-content-center gap-2">
+        <input type="text" id="weekInput" class="form-control w-25 text-center fs-5" placeholder="کد برنامه (مثلاً 05)">
+        <button class="btn btn-primary px-4 bold-text" onclick="loadWeeklyData()">دریافت برنامه</button>
+        <button class="btn btn-success px-4 bold-text" onclick="window.print()">🖨️ چاپ کل هفته</button>
     </div>
 </div>
 
@@ -65,12 +63,13 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8NJAfUez3wCUiRXthdSuRT0thlXL_bPS2rDXGpcJhb25wdejrhKvMZ5DjxlZLv6Nh/exec";
-    const LOGO_URL = "https://lh3.googleusercontent.com/u/0/d/1yD5HwxYqRXZUdiYrlHg_fM-SVvZC_1yB=w1000-h1000-iv1"; // لینک اصلاح شده گوگل درایو
+    // اصلاح لینک لوگو برای نمایش مستقیم
+    const LOGO_URL = "https://lh3.googleusercontent.com/d/1yD5HwxYqRXZUdiYrlHg_fM-SVvZC_1yB";
     const studentCode = "tahsili38";
 
     let allQuotes = [];
 
-    // تابع لود کردن جملات از فایل تکست گیت‌هاب
+    // تابع خواندن جملات از فایل تکست گیت‌هاب
     async function fetchQuotes() {
         try {
             const response = await fetch('quotes.txt');
@@ -81,12 +80,18 @@
         }
     }
 
+    // اصلاح فرمت تاریخ (حذف T و Z)
+    function formatDate(dateStr) {
+        if (!dateStr || !dateStr.includes('T')) return dateStr;
+        return dateStr.split('T')[0];
+    }
+
     async function loadWeeklyData() {
         const weekNum = document.getElementById('weekInput').value;
         if(!weekNum) return;
         
-        await fetchQuotes(); // اول جملات را بگیر
-        document.getElementById('print-content').innerHTML = "<p class='text-center mt-5'>در حال آماده‌سازی برنامه...</p>";
+        await fetchQuotes();
+        document.getElementById('print-content').innerHTML = "<p class='text-center mt-5'>در حال تنظیم چیدمان و انتخاب جملات...</p>";
         
         try {
             const res = await fetch(SCRIPT_URL, {
@@ -103,8 +108,7 @@
         container.innerHTML = "";
 
         data.forEach((day) => {
-            // انتخاب یک جمله تصادفی برای هر روز
-            const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : "موفقیت تکرار تلاش‌های کوچک است.";
+            const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : "پیروزی از آن توست.";
 
             let html = `
                 <div class="page-container">
@@ -113,12 +117,12 @@
                             <h2 class="bold-text">برنامه روز ${day.dayName}</h2>
                             <div class="text-end">
                                 <div class="bold-text">کد مراجع: ${studentCode}</div>
-                                <div>تاریخ: ${day.date} | هفته: ${weekNum}</div>
+                                <div>تاریخ: ${formatDate(day.date)} | هفته: ${weekNum}</div>
                             </div>
                         </div>
                         <table>
                             <thead>
-                                <tr><th style="width:25%">زمان</th><th>موضوع مطالعه</th><th style="width:15%">تایید</th></tr>
+                                <tr><th style="width:25%">زمان</th><th>محتوای برنامه مطالعاتی</th><th style="width:15%">تایید</th></tr>
                             </thead>
                             <tbody>`;
 
@@ -143,9 +147,9 @@
 
                 html += `
                     <tr class="${rowClass}">
-                        <td class="bold-text">${task.time}</td>
+                        <td class="bold-text" dir="ltr">${task.time}</td>
                         <td>${task.lesson}</td>
-                        <td>${task.lesson && !task.lesson.includes("استراحت") ? "✔️" : ""}</td>
+                        <td class="fs-4">${task.lesson && !task.lesson.includes("استراحت") ? "✔️" : ""}</td>
                     </tr>`;
             });
 
@@ -154,10 +158,10 @@
                     <div class="stamp-footer">
                         <div style="max-width:70%">
                             <strong class="bold-text">حرف روز:</strong>
-                            <p style="margin-top:5px; font-size:16px;">${randomQuote}</p>
+                            <p style="margin-top:5px; font-size:16px; line-height:1.6;">${randomQuote}</p>
                         </div>
                         <div class="text-center">
-                            <img src="${LOGO_URL}" class="logo-img" onerror="this.src='https://raw.githubusercontent.com/ehsanafsharmanesh/ehsanafsharmanesh.github.io/main/newlogo.jpg'">
+                            <img src="${LOGO_URL}" class="logo-img" onerror="this.src='newlogo.jpg'">
                             <div class="bold-text" style="font-size:12px; margin-top:5px;">آکادمی دکتر افشارمنش</div>
                         </div>
                     </div>
