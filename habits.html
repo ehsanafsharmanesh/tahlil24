@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ردیاب عادت‌ها | آکادمی دکتر افشارمنش</title>
+    <title>ردیاب عادت‌ها</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
         @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
@@ -41,13 +41,13 @@
             <button class="btn-add" onclick="addNewHabit()">➕ اضافه کردن به لیست</button>
         </div>
 
-        <button class="btn-save" onclick="saveHabits()">🚀 ثبت نهایی عادت‌های امروز</button>
-        <button class="btn btn-link w-100 mt-2 text-decoration-none text-muted" onclick="location.href='index.html'">بازگشت به داشبورد</button>
+        <button class="btn-save" onclick="saveHabits()">🚀 ثبت عادت‌ها</button>
+        <button class="btn btn-link w-100 mt-2 text-decoration-none text-muted" onclick="location.href='index.html'">بازگشت</button>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMgZw_YbVgPf6kvK1gOdgtaQw2e7NhNQKOXbJBPFx1nYhzS2ZyP112FdNVZomSqkx0/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsfbe4IcPNP9xcLtlfpvmN2SLkgycHLUSZMS8K3RgnlC98kyDRw-8rakmMYbb_Jnhq/exec";
     const profile = JSON.parse(localStorage.getItem("profile") || "{}");
     let activeHabits = new Set();
 
@@ -77,14 +77,15 @@
         const data = {
             action: "saveReport", // از همان تابع ذخیره گزارش استفاده می‌کنیم
             username: profile.username,
+            week: 5, // هفته پیش‌فرض (می‌توانید داینامیک کنید)
             habits: Array.from(activeHabits).join('، '),
             mobileTime: document.getElementById('mobileTime').value || 0,
-            type: "habit_only"
+            extraBook: "", studySpec:0, testSpec:0, studyGen:0, testGen:0, examScore:0, satSelf:0, satConsult:0
         };
 
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            alert("عادت‌های امروز با موفقیت ثبت شد.");
+            alert("عادت‌ها ثبت شد.");
             location.href = "index.html";
         } catch(e) { alert("ثبت شد."); location.href = "index.html"; }
     }
