@@ -4,46 +4,50 @@
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        body { background: #f8f9fa; font-family: Tahoma; padding: 15px; }
-        .lesson-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 10px; border-right: 6px solid #0d6efd; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .lesson-card.done { border-right-color: #198754; background: #f0fff4; }
+        @font-face { font-family: 'Doran'; src: url('https://cdn.fontcdn.ir/Font/Persian/Doran/Doran-Medium.ttf'); }
+        body { background: #f4f7f6; font-family: 'Doran', Tahoma; padding: 15px; }
+        .lesson-card { 
+            background: white; border-radius: 20px; padding: 20px; margin-bottom: 12px; 
+            border-right: 8px solid #3a7bd5; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .lesson-card.done { border-right-color: #28a745; background: #f0fff4; transform: translateX(-5px); }
+        .modal-custom {
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            border-radius: 30px; padding: 30px; border: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
     <div class="container" style="max-width: 450px;">
-        <h5 class="text-center mb-4 fw-bold">ورود اطلاعات روزانه</h5>
-        <div id="lessonList">در حال بارگذاری برنامه...</div>
+        <h4 class="fw-bold text-center my-4">ثبت گزارش امروز</h4>
+        <div id="lessonList"></div>
         
-        <div id="compBox" class="d-none mt-4 p-3 bg-white rounded-4 border">
-            <h6 class="fw-bold text-primary">➕ باکس جبرانی</h6>
-            <input type="text" id="extraBook" class="form-control" placeholder="نام کتاب را انتخاب کنید...">
+        <div id="compBox" class="d-none mt-4 p-3 bg-white rounded-4 shadow-sm border">
+            <h6 class="text-primary fw-bold">➕ باکس جبرانی</h6>
+            <input type="text" id="extra" class="form-control rounded-3" placeholder="نام درس جبرانی...">
         </div>
 
-        <div class="mt-4 p-3 bg-white rounded-4 border">
-            <label class="small text-muted">تایم موبایل (دقیقه):</label>
-            <input type="number" id="mobile" class="form-control text-center mb-3">
-            <label class="small text-muted">رضایت از عملکرد خود:</label>
-            <input type="range" class="form-range" id="satSelf" min="1" max="10">
-        </div>
-
-        <button class="btn btn-primary w-100 py-3 mt-4 rounded-pill fw-bold" onclick="finalSave()">ثبت و تایید نهایی 🚀</button>
+        <button class="btn btn-primary w-100 py-3 mt-4 rounded-pill shadow-lg fw-bold" onclick="finalSave()">🚀 ثبت و ارسال نهایی</button>
     </div>
 
-    <div id="vModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:1000;">
-        <div class="bg-white p-4 rounded-5 w-75 text-center shadow-lg">
-            <h6 id="vTitle" class="fw-bold"></h6>
-            <input type="number" id="vInput" class="form-control form-control-lg text-center my-4">
-            <button class="btn btn-primary w-100 rounded-pill py-2" onclick="confirmV()">تایید</button>
+    <div id="vModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:1000;">
+        <div class="modal-custom w-75 text-center shadow-lg">
+            <h5 id="vTitle" class="fw-bold text-dark"></h5>
+            <input type="number" id="vInput" class="form-control form-control-lg text-center my-4 border-primary">
+            <button class="btn btn-primary btn-lg w-100 rounded-pill" onclick="confirmV()">تایید و تیک زدن</button>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiFk6ICEcvTV63XQImvN3lSgOA2AdtjihEl-8xZmHyi97l4qd0zADmqRn8nnrwcQDj/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFt3xBXop-WTbDpUSB9dsn2Z_zOKWJ9nt1Dk98cs1kOyAvKpjXZLzaTmO58nqqNuYU/exec";
         const profile = JSON.parse(localStorage.getItem("profile"));
         let plan = [], specSum = 0, genSum = 0, activeIdx = null;
 
         window.onload = async () => {
-            const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:"getDailyData", username:profile.username, week:5, dayName:"شنبه"})});
+            const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
+                action:"getDailyData", username:profile.username, week:5, dayName:"شنبه" 
+            })});
             const data = await res.json();
             plan = data.plan;
             if(data.hasComp) document.getElementById('compBox').classList.remove('d-none');
@@ -53,8 +57,8 @@
         function render() {
             document.getElementById('lessonList').innerHTML = plan.map((l, i) => `
                 <div class="lesson-card d-flex justify-content-between align-items-center" id="c-${i}" onclick="openM(${i})">
-                    <span><b>${l.time}</b> | ${l.cleanName}</span>
-                    <span id="s-${i}">⚪</span>
+                    <div><span class="text-muted small">${l.time}</span><br><b>${l.cleanName}</b></div>
+                    <span id="s-${i}" class="fs-4">⚪</span>
                 </div>`).join('');
         }
 
@@ -68,7 +72,6 @@
             const v = parseInt(document.getElementById('vInput').value) || 0;
             if(plan[activeIdx].isGen) genSum += v; else specSum += v;
             
-            // ذخیره مقادیر برای کارتکس
             let stats = JSON.parse(localStorage.getItem('today_stats') || '{}');
             stats[plan[activeIdx].time] = v;
             localStorage.setItem('today_stats', JSON.stringify(stats));
@@ -76,19 +79,18 @@
             document.getElementById(`c-${activeIdx}`).classList.add('done');
             document.getElementById(`s-${activeIdx}`).innerText = '✅';
             document.getElementById('vModal').style.display = 'none';
+            document.getElementById('vInput').value = "";
         }
 
         async function finalSave() {
-            const reportData = {
+            const body = {
                 action: "saveReport", username: profile.username, week: 5,
-                mobile: document.getElementById('mobile').value,
-                extra: document.getElementById('extraBook').value,
-                testSpec: specSum, testGen: genSum, // این دو در اسکریپت در ستون مارکدار هم کپی می‌شوند
-                satSelf: document.getElementById('satSelf').value,
-                studySpec: 0, studyGen: 0, examScore: 0, satConsult: 10, habits: ""
+                testSpec: specSum, testGen: genSum, 
+                extra: document.getElementById('extra').value,
+                mobile: 0, habits: "", studySpec: 0, studyGen: 0, examScore: 0, satSelf: 10, satConsult: 10
             };
-            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(reportData)});
-            alert("گزارش با موفقیت در شیت ثبت شد!");
+            await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(body)});
+            alert("گزارش با موفقیت ثبت شد");
             location.href = "index.html";
         }
     </script>
