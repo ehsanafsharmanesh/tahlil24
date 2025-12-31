@@ -8,33 +8,58 @@
     <style>
         @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
         body { background: #f4f7f6; font-family: 'Doran', sans-serif; }
-        .gradient-loader { display: none; width: 100%; height: 5px; background: linear-gradient(90deg, #ff4b2b, #007bff, #ff4b2b); background-size: 200% 100%; animation: move 2s linear infinite; position: fixed; top: 0; }
+        .gradient-loader { display: none; width: 100%; height: 5px; background: linear-gradient(90deg, #ff4b2b, #007bff, #ff4b2b); background-size: 200% 100%; animation: move 2s linear infinite; position: fixed; top: 0; z-index: 9999; }
         @keyframes move { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         .main-card { border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: none; }
-        .btn-dash { padding: 20px; border-radius: 18px; font-weight: bold; margin-bottom: 15px; border: none; color: white; transition: 0.3s; width: 100%; }
+        .btn-dash { padding: 20px; border-radius: 18px; font-weight: bold; margin-bottom: 15px; border: none; color: white; transition: 0.3s; width: 100%; text-align: right; display: flex; align-items: center; justify-content: space-between; }
+        .btn-dash:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .btn-1 { background: linear-gradient(45deg, #1e3c72, #2a5298); }
         .btn-2 { background: linear-gradient(45deg, #11998e, #38ef7d); }
         .btn-3 { background: linear-gradient(45deg, #ee0979, #ff6a00); }
+        .btn-4 { background: linear-gradient(45deg, #833ab4, #fd1d1d); }
+        .quote-box { background: rgba(0,0,0,0.03); border-radius: 15px; padding: 15px; margin-bottom: 20px; font-size: 0.9rem; color: #555; border-right: 4px solid #007bff; }
     </style>
 </head>
 <body>
     <div id="loader" class="gradient-loader"></div>
     <div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+        
         <div id="login-sec" class="card main-card p-4 w-100" style="max-width: 400px;">
-            <h3 class="text-center mb-4">ورود داوطلب</h3>
-            <input type="text" id="user" class="form-control mb-3 text-center" placeholder="نام کاربری (tahsili38)">
-            <input type="password" id="pass" class="form-control mb-4 text-center" placeholder="رمز عبور">
-            <button class="btn btn-primary w-100 py-3 fw-bold" onclick="login()">ورود به پنل</button>
+            <h3 class="text-center mb-4 fw-bold">ورود داوطلب</h3>
+            <input type="text" id="user" class="form-control mb-3 text-center rounded-4 py-3" placeholder="نام کاربری">
+            <input type="password" id="pass" class="form-control mb-4 text-center rounded-4 py-3" placeholder="رمز عبور">
+            <button class="btn btn-primary w-100 py-3 fw-bold rounded-4" onclick="login()">ورود به پنل</button>
         </div>
+
         <div id="dash-sec" class="card main-card p-4 w-100 d-none" style="max-width: 500px;">
-            <h4 id="welcome" class="text-center mb-4 text-primary"></h4>
-            <button class="btn-dash btn-1" onclick="location.href='report.html'">📝 ورود اطلاعات جدید</button>
-            <button class="btn-dash btn-2" onclick="location.href='tracker.html'">📊 ردیاب تحصیلی</button>
-            <button class="btn-dash btn-3" onclick="location.href='study.html'">🖨️ دریافت کارتکس برنامه</button>
+            <h4 id="welcome" class="text-center mb-2 text-primary fw-bold"></h4>
+            <div id="quoteDisplay" class="quote-box">در حال دریافت جمله انگیزشی...</div>
+            
+            <button class="btn-dash btn-1" onclick="location.href='report.html'">
+                <span>📝 ورود اطلاعات گزارش</span> <span>👈</span>
+            </button>
+            <button class="btn-dash btn-2" onclick="location.href='tracker.html?mode=study'">
+                <span>📊 ردیاب تحصیلی</span> <span>👈</span>
+            </button>
+            <button class="btn-dash btn-3" onclick="location.href='study.html'">
+                <span>📋 کارتکس برنامه</span> <span>👈</span>
+            </button>
+            <button class="btn-dash btn-4" onclick="location.href='habits.html'">
+                <span>⚡ ردیاب عادت‌ها</span> <span>👈</span>
+            </button>
+            <button class="btn btn-light w-100 rounded-4 mt-2 text-muted" onclick="logout()">خروج از حساب</button>
         </div>
     </div>
+
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMgZw_YbVgPf6kvK1gOdgtaQw2e7NhNQKOXbJBPFx1nYhzS2ZyP112FdNVZomSqkx0/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsfbe4IcPNP9xcLtlfpvmN2SLkgycHLUSZMS8K3RgnlC98kyDRw-8rakmMYbb_Jnhq/exec";
+        
+        // چک کردن لاگین بودن کاربر
+        const savedProfile = JSON.parse(localStorage.getItem("profile"));
+        if(savedProfile) {
+            showDashboard(savedProfile);
+        }
+
         async function login() {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
@@ -44,12 +69,28 @@
                 const data = await res.json();
                 if(data.status === "success") {
                     localStorage.setItem("profile", JSON.stringify(data.user));
-                    document.getElementById('login-sec').classList.add('d-none');
-                    document.getElementById('dash-sec').classList.remove('d-none');
-                    document.getElementById('welcome').innerText = `سلام ${data.user.firstName} جان خوش آمدی!`;
+                    showDashboard(data.user);
                 } else { alert(data.msg); }
             } catch(e) { alert("خطا در اتصال"); }
             document.getElementById('loader').style.display = 'none';
+        }
+
+        function showDashboard(user) {
+            document.getElementById('login-sec').classList.add('d-none');
+            document.getElementById('dash-sec').classList.remove('d-none');
+            document.getElementById('welcome').innerText = `سلام ${user.firstName} جان!`;
+            
+            // دریافت جمله از گیت‌هاب (لینک فایل Raw خود را جایگزین کنید)
+            fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/quotes.txt')
+                .then(r => r.text()).then(text => {
+                    const lines = text.split('\n').filter(l => l.trim() !== "");
+                    document.getElementById('quoteDisplay').innerText = lines[Math.floor(Math.random() * lines.length)];
+                }).catch(e => document.getElementById('quoteDisplay').innerText = "امروز روز پیروزی توست!");
+        }
+
+        function logout() {
+            localStorage.removeItem("profile");
+            location.reload();
         }
     </script>
 </body>
