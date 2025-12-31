@@ -3,70 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آنالیزور پیشرفت</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>آنالیز عملکرد</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @font-face { font-family: 'Doran'; src: url('https://cdn.fontcdn.ir/Font/Persian/Doran/Doran-Medium.ttf'); }
-        body { background: #f0f2f5; font-family: 'Doran', Tahoma; padding: 20px; }
-        .chart-card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
+        body { background: #f8f9fa; font-family: 'Doran', sans-serif; padding: 20px; }
+        .chart-box { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .btn-back { background: #6c757d; color: white; border-radius: 12px; padding: 10px 20px; text-decoration: none; display: inline-block; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <div class="container" style="max-width: 550px;">
-        <h4 class="fw-bold mb-4 text-center">📊 تحلیل روند پیشرفت</h4>
-        
-        <div class="chart-card">
-            <canvas id="mainChart"></canvas>
+    <div class="container" style="max-width: 600px;">
+        <a href="index.html" class="btn-back">🔙 بازگشت به داشبورد</a>
+        <h4 id="pageTitle" class="text-center mb-4 fw-bold"></h4>
+
+        <div id="studyView" class="d-none">
+            <div class="chart-box">
+                <h6 class="text-center">نمودار ترکیبی (ساعت، تشریحی، مارکدار)</h6>
+                <canvas id="studyChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h6 class="text-center">روند تراز آزمون‌ها</h6>
+                <canvas id="examChart"></canvas>
+            </div>
         </div>
 
-        <div class="chart-card">
-            <canvas id="examChart"></canvas>
+        <div id="habitsView" class="d-none">
+            <div class="chart-box">
+                <h6 class="text-center">پایداری عادت‌ها (نمودار راداری)</h6>
+                <canvas id="radarChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h6 class="text-center">تایم استفاده از موبایل (دقیقه)</h6>
+                <canvas id="mobileChart"></canvas>
+            </div>
         </div>
-
-        <button class="btn btn-outline-primary w-100 rounded-pill py-2" onclick="location.href='index.html'">بازگشت به پنل</button>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiFk6ICEcvTV63XQImvN3lSgOA2AdtjihEl-8xZmHyi97l4qd0zADmqRn8nnrwcQDj/exec";
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
         const profile = JSON.parse(localStorage.getItem("profile"));
+        const SCRIPT_URL = "آدرس_اسکریپت_گوگل_شما";
 
         window.onload = async () => {
-            const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
-                action:"getUserHistory", username: profile.username
-            })});
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getUserHistory", username: profile.username })
+            });
             const history = (await res.json()).data;
 
-            // نمودار تست‌ها (تخصصی و عمومی)
-            new Chart(document.getElementById('mainChart'), {
+            if (mode === 'study') {
+                document.getElementById('pageTitle').innerText = "📊 آنالیز تحصیلی";
+                document.getElementById('studyView').classList.remove('d-none');
+                drawStudyCharts(history);
+            } else {
+                document.getElementById('pageTitle').innerText = "⚡ ردیاب عادت‌ها";
+                document.getElementById('habitsView').classList.remove('d-none');
+                drawHabitCharts(history);
+            }
+        };
+
+        function drawStudyCharts(data) {
+            new Chart(document.getElementById('studyChart'), {
                 type: 'bar',
                 data: {
-                    labels: history.map(h => "هفته " + h.week),
+                    labels: data.map(d => "هفته " + d.week),
                     datasets: [
-                        { label: 'تست تخصصی', data: history.map(h => h.testSpec), backgroundColor: '#0d6efd' },
-                        { label: 'سوال عمومی', data: history.map(h => h.testGen), backgroundColor: '#198754' }
+                        { label: 'ساعت مطالعه', data: data.map(d => d.studySpec), backgroundColor: '#4e73df' },
+                        { label: 'تشریحی', data: data.map(d => d.sumSpec), backgroundColor: '#1cc88a' },
+                        { label: 'مارکدار', data: data.map(d => d.markedSpec), type: 'line', borderColor: '#e74a3b', fill: false }
                     ]
-                },
-                options: { responsive: true, plugins: { title: { display: true, text: 'مقایسه حجم تست هفتگی' } } }
+                }
             });
 
-            // نمودار تراز آزمون
             new Chart(document.getElementById('examChart'), {
                 type: 'line',
                 data: {
-                    labels: history.map(h => "آزمون " + h.week),
-                    datasets: [{
-                        label: 'تراز کسب شده',
-                        data: history.map(h => h.examScore),
-                        borderColor: '#ffc107',
-                        backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true, plugins: { title: { display: true, text: 'روند تغییرات تراز' } } }
+                    labels: data.filter(d => d.examScore > 0).map(d => "آزمون " + d.week),
+                    datasets: [{ label: 'تراز', data: data.filter(d => d.examScore > 0).map(d => d.examScore), borderColor: '#f6c23e', fill: true }]
+                }
             });
-        };
+        }
+
+        function drawHabitCharts(data) {
+            new Chart(document.getElementById('radarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['خواب', 'ورزش', 'تعهد', 'بیداری', 'تست'],
+                    datasets: [{ label: 'انضباط فردی', data: [80, 70, 90, 60, 85], borderColor: '#4e73df', backgroundColor: 'rgba(78, 115, 223, 0.2)' }]
+                }
+            });
+            
+            new Chart(document.getElementById('mobileChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => "هفته " + d.week),
+                    datasets: [{ label: 'دقیقه موبایل', data: data.map(d => d.mobile), backgroundColor: '#f6c23e' }]
+                }
+            });
+        }
     </script>
 </body>
 </html>
