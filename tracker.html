@@ -45,7 +45,7 @@
         const params = new URLSearchParams(window.location.search);
         const mode = params.get('mode');
         const profile = JSON.parse(localStorage.getItem("profile"));
-        const SCRIPT_URL = "آدرس_اسکریپت_گوگل_شما";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMgZw_YbVgPf6kvK1gOdgtaQw2e7NhNQKOXbJBPFx1nYhzS2ZyP112FdNVZomSqkx0/exec";
 
         window.onload = async () => {
             const res = await fetch(SCRIPT_URL, {
