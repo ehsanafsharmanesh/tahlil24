@@ -3,133 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آنالیز هوشمند | آکادمی دکتر افشارمنش</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <title>آنالیزور پیشرفت</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
-        body { background-color: #f4f7f6; font-family: 'Doran', sans-serif; padding-bottom: 80px; }
-        .chart-card { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #eee; }
-        .header-box { background: white; padding: 20px; border-bottom: 2px solid #007bff; margin-bottom: 20px; text-align: center; }
-        .stat-circle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #007bff; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; color: #007bff; }
+        @font-face { font-family: 'Doran'; src: url('https://cdn.fontcdn.ir/Font/Persian/Doran/Doran-Medium.ttf'); }
+        body { background: #f0f2f5; font-family: 'Doran', Tahoma; padding: 20px; }
+        .chart-card { background: white; border-radius: 25px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
-
-<div class="header-box">
-    <h4 id="pageTitle">در حال تحلیل داده‌ها...</h4>
-</div>
-
-<div class="container" style="max-width: 550px;">
-    
-    <div id="studySection" class="d-none">
-        <div class="row text-center mb-4">
-            <div class="col-6">
-                <div class="stat-circle" id="avgSpec">0</div>
-                <small class="text-muted">میانگین مطالعه</small>
-            </div>
-            <div class="col-6">
-                <div class="stat-circle" id="totalMarked">0</div>
-                <small class="text-muted">کل تست مارکدار</small>
-            </div>
+    <div class="container" style="max-width: 550px;">
+        <h4 class="fw-bold mb-4 text-center">📊 تحلیل روند پیشرفت</h4>
+        
+        <div class="chart-card">
+            <canvas id="mainChart"></canvas>
         </div>
 
         <div class="chart-card">
-            <h6 class="text-center mb-4">روند مطالعه و تست‌های تخصصی</h6>
-            <canvas id="mixedStudyChart"></canvas>
+            <canvas id="examChart"></canvas>
         </div>
 
-        <div class="chart-card">
-            <h6 class="text-center mb-4">نمودار پیشرفت تراز آزمون</h6>
-            <canvas id="examScoreChart"></canvas>
-        </div>
+        <button class="btn btn-outline-primary w-100 rounded-pill py-2" onclick="location.href='index.html'">بازگشت به پنل</button>
     </div>
 
-    <div id="habitSection" class="d-none">
-        <div class="chart-card">
-            <h6 class="text-center mb-4">آنالیز ۵ ضلعی عادت‌ها (پایداری)</h6>
-            <canvas id="habitsRadarChart"></canvas>
-            <p class="small text-muted text-center mt-3">هر چه نمودار به لبه‌ها نزدیک‌تر باشد، انضباط شما بیشتر است.</p>
-        </div>
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiFk6ICEcvTV63XQImvN3lSgOA2AdtjihEl-8xZmHyi97l4qd0zADmqRn8nnrwcQDj/exec";
+        const profile = JSON.parse(localStorage.getItem("profile"));
 
-        <div class="chart-card text-center">
-            <h6 class="mb-3">تایم موبایل در هفته اخیر</h6>
-            <canvas id="mobileTimeChart"></canvas>
-        </div>
-    </div>
+        window.onload = async () => {
+            const res = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({
+                action:"getUserHistory", username: profile.username
+            })});
+            const history = (await res.json()).data;
 
-    <button class="btn btn-primary w-100 py-3 rounded-4 shadow-sm" onclick="location.href='index.html'">بازگشت به پنل اصلی</button>
-</div>
+            // نمودار تست‌ها (تخصصی و عمومی)
+            new Chart(document.getElementById('mainChart'), {
+                type: 'bar',
+                data: {
+                    labels: history.map(h => "هفته " + h.week),
+                    datasets: [
+                        { label: 'تست تخصصی', data: history.map(h => h.testSpec), backgroundColor: '#0d6efd' },
+                        { label: 'سوال عمومی', data: history.map(h => h.testGen), backgroundColor: '#198754' }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'مقایسه حجم تست هفتگی' } } }
+            });
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('type'); 
-    const profile = JSON.parse(localStorage.getItem("profile") || "{}");
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPDMFhYNd5_116jaHVYHuiKw7nl7ktD0GAQhZxNot8pT3R4flfF0yZgGXmCoy26s0W/exec";
-
-    window.onload = async () => {
-        if (mode === 'study') {
-            document.getElementById('pageTitle').innerText = "📊 ردیاب تحصیلی";
-            document.getElementById('studySection').classList.remove('d-none');
-            initStudyCharts();
-        } else {
-            document.getElementById('pageTitle').innerText = "✅ ردیاب عادت‌ها";
-            document.getElementById('habitSection').classList.remove('d-none');
-            initHabitCharts();
-        }
-    };
-
-    async function initStudyCharts() {
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getUserHistory", username: profile.username }) });
-        const data = (await res.json()).data;
-
-        // نمودار ترکیبی تحصیلی
-        new Chart(document.getElementById('mixedStudyChart'), {
-            type: 'bar',
-            data: {
-                labels: data.map(d => "هفته " + d.week),
-                datasets: [
-                    { label: 'ساعت مطالعه', data: data.map(d => d.studySpec), backgroundColor: '#007bff', borderRadius: 8 },
-                    { label: 'سوال تشریحی', data: data.map(d => d.sumSpec), backgroundColor: '#28a745', borderRadius: 8 },
-                    { label: 'تست مارکدار', data: data.map(d => d.markedSpec), type: 'line', borderColor: '#ff4757', tension: 0.4, fill: false }
-                ]
-            }
-        });
-
-        // نمودار تراز جداگانه
-        new Chart(document.getElementById('examScoreChart'), {
-            type: 'line',
-            data: {
-                labels: data.filter(d => d.examScore > 0).map(d => "آزمون " + d.week),
-                datasets: [{
-                    label: 'تراز آزمون',
-                    data: data.filter(d => d.examScore > 0).map(d => d.examScore),
-                    borderColor: '#f1c40f',
-                    backgroundColor: 'rgba(241, 196, 15, 0.1)',
-                    fill: true,
-                    pointRadius: 6
-                }]
-            }
-        });
-    }
-
-    function initHabitCharts() {
-        // نمودار راداری برای عادت‌ها (مثال)
-        new Chart(document.getElementById('habitsRadarChart'), {
-            type: 'radar',
-            data: {
-                labels: ['خواب', 'ورزش', 'تایم موبایل', 'بیداری', 'تعهد به برنامه'],
-                datasets: [{
-                    label: 'عملکرد شما',
-                    data: [80, 60, 90, 70, 85], // این مقادیر از دیتای واقعی جایگزین می‌شوند
-                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                    borderColor: '#007bff',
-                    pointBackgroundColor: '#007bff'
-                }]
-            },
-            options: { scales: { r: { suggestMin: 0, suggestMax: 100 } } }
-        });
-    }
-</script>
+            // نمودار تراز آزمون
+            new Chart(document.getElementById('examChart'), {
+                type: 'line',
+                data: {
+                    labels: history.map(h => "آزمون " + h.week),
+                    datasets: [{
+                        label: 'تراز کسب شده',
+                        data: history.map(h => h.examScore),
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'روند تغییرات تراز' } } }
+            });
+        };
+    </script>
 </body>
 </html>
