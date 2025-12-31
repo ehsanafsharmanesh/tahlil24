@@ -1,41 +1,69 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت آکادمی</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل کاربری | آکادمی دکتر افشارمنش</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
-        @font-face { font-family: 'Doran'; src: url('https://cdn.fontcdn.ir/Font/Persian/Doran/Doran-Medium.ttf'); }
-        body { background: #f0f2f5; font-family: 'Doran', Tahoma, sans-serif; }
-        .hero { background: linear-gradient(135deg, #0d6efd, #003d99); color: white; border-radius: 25px; padding: 30px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .menu-card { background: white; border-radius: 20px; padding: 25px; text-align: center; transition: 0.3s; cursor: pointer; text-decoration: none; color: #333; display: block; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
+        body { background: #f4f7f6; font-family: 'Doran', sans-serif; }
+        .main-card { 
+            background: white; border-radius: 25px; padding: 25px; 
+            text-align: center; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            transition: 0.3s; cursor: pointer; height: 100%;
+        }
+        .main-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .icon-box { font-size: 3rem; margin-bottom: 15px; }
+        .welcome-text { margin: 30px 0; color: #333; }
     </style>
 </head>
 <body>
-    <div class="container py-4" style="max-width: 500px;">
-        <div class="hero">
-            <h4 class="fw-bold">سلام <span id="uName">...</span></h4>
-            <p id="quote" class="mt-3 opacity-75 small italic">در حال دریافت جمله روز...</p>
+    <div class="container" style="max-width: 600px;">
+        <div class="welcome-text text-center">
+            <h4 class="fw-bold">سلام <span id="userName" class="text-primary"></span> جان!</h4>
+            <p class="text-muted">به پنل هوشمند مدیریت مطالعه خوش آمدی</p>
         </div>
+
         <div class="row g-3">
-            <div class="col-6"><a href="report.html" class="menu-card"><div class="fs-1">📝</div><b>ثبت گزارش</b></a></div>
-            <div class="col-6"><a href="study.html" class="menu-card"><div class="fs-1">📋</div><b>کارتکس</b></a></div>
-            <div class="col-6"><a href="tracker.html?mode=study" class="menu-card"><div class="fs-1">📊</div><b>تحلیل درسی</b></a></div>
-            <div class="col-6"><a href="tracker.html?mode=habits" class="menu-card"><div class="fs-1">⚡</div><b>عادت‌ها</b></a></div>
+            <div class="col-6">
+                <div class="main-card" onclick="location.href='report.html'">
+                    <div class="icon-box">📝</div>
+                    <div class="fw-bold">ورود اطلاعات</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="main-card" onclick="location.href='tracker.html?mode=study'">
+                    <div class="icon-box">📊</div>
+                    <div class="fw-bold">ردیاب تحصیلی</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="main-card" onclick="location.href='tracker.html?mode=habits'">
+                    <div class="icon-box">⚡</div>
+                    <div class="fw-bold">ردیاب عادت‌ها</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="main-card" onclick="location.href='study.html'">
+                    <div class="icon-box">📋</div>
+                    <div class="fw-bold">کارتکس برنامه</div>
+                </div>
+            </div>
         </div>
+
+        <button class="btn btn-outline-danger w-100 mt-5 rounded-4" onclick="logout()">خروج از حساب</button>
     </div>
+
     <script>
         const profile = JSON.parse(localStorage.getItem("profile"));
-        if(!profile) window.location.href = "login.html";
-        document.getElementById('uName').innerText = profile.firstName;
-        
-        // دریافت جمله از گیت‌هاب
-        fetch('https://github.com/ehsanafsharmanesh/tahlil24/blob/main/quotes.txt')
-            .then(r => r.text()).then(t => {
-                const lines = t.split('\n').filter(l => l.trim() !== "");
-                document.getElementById('quote').innerText = lines[Math.floor(Math.random() * lines.length)];
-            }).catch(() => document.getElementById('quote').innerText = "موفقیت در انتظار توست!");
+        if (!profile) location.href = "login.html";
+        document.getElementById('userName').innerText = profile.firstName;
+
+        function logout() {
+            localStorage.clear();
+            location.href = "login.html";
+        }
     </script>
 </body>
 </html>
