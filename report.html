@@ -1,41 +1,26 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ثبت گزارش روزانه | آکادمی دکتر افشارمنش</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ثبت گزارش</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <style>
         @font-face { font-family: 'Doran'; src: url('fonts/DoranFaNum-Medium.ttf'); }
         body { background-color: #f8f9fa; font-family: 'Doran', sans-serif; }
-        
-        /* لودینگ گرادیانتی درخواستی */
         .progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: #eee; z-index: 2000; }
-        .progress-bar-fill { 
-            height: 100%; width: 0%; 
-            background: linear-gradient(90deg, #ff4b2b, #007bff, #ff416c); 
-            background-size: 200% 100%; animation: gradientMove 2s linear infinite; transition: width 0.5s ease;
-        }
-        @keyframes gradientMove { 0% {background-position: 100% 0%;} 100% {background-position: -100% 0%;} }
-
+        .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff4b2b, #007bff, #ff416c); transition: width 0.5s ease; }
         .step-card { display: none; background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-top: 50px; }
         .step-card.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
-
         .btn-nav { border-radius: 12px; padding: 15px; font-weight: bold; width: 100%; border: none; margin-top: 10px; }
         .btn-next { background: #007bff; color: white; }
         .btn-back { background: #f1f3f5; color: #495057; }
         
-        /* استایل دروس مطابق تصویر 2727.jpg */
-        .lesson-chip { 
-            display: inline-block; padding: 10px 20px; background: white; 
-            border: 1px solid #dee2e6; border-radius: 12px; margin: 6px; 
-            cursor: pointer; transition: 0.2s; color: #495057;
-        }
-        .lesson-chip.selected { background: #e7f1ff; border-color: #007bff; color: #007bff; font-weight: bold; }
-        
-        .habit-btn { border: 2px solid #f1f3f5; padding: 15px; border-radius: 15px; margin-bottom: 10px; cursor: pointer; text-align: right; }
-        .habit-btn.active { border-color: #007bff; background: #f8fbff; }
+        /* استایل آیتم‌های برنامه */
+        .plan-item { background: #fff; border: 1px solid #eee; border-right: 5px solid #007bff; padding: 15px; border-radius: 15px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .plan-item.done { border-right-color: #28a745; background: #f0fff4; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 3000; }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; }
     </style>
 </head>
 <body>
@@ -45,117 +30,134 @@
 <div class="container" style="max-width: 500px; padding-bottom: 60px;">
     
     <div id="step-1" class="step-card active text-center">
-        <h4 class="mb-4">سلام <span id="user-display"></span> جان، خوش آمدی</h4>
-        <label class="mb-2">شماره هفته برنامه را وارد کن:</label>
+        <h4 class="mb-4">شروع گزارش</h4>
+        <label class="mb-2">هفته برنامه:</label>
         <input type="number" id="weekNum" class="form-control form-control-lg text-center mb-4" placeholder="مثلاً 5">
-        <button class="btn-nav btn-next" onclick="goToStep(2)">شروع گزارش روزانه</button>
+        <button class="btn-nav btn-next" onclick="goToStep(2)">ادامه</button>
     </div>
 
     <div id="step-2" class="step-card">
-        <h4 class="text-center mb-4">ردیاب عادت‌ها</h4>
-        <div class="habit-btn" onclick="this.classList.toggle('active')">⏰ بیداری به‌موقع</div>
-        <div class="habit-btn" onclick="this.classList.toggle('active')">💪 ورزش روزانه</div>
-        <div class="habit-btn" id="mobile-trigger" onclick="toggleMobile(this)">📱 استفاده از موبایل</div>
-        <div id="mobile-input-box" class="d-none mb-3">
-            <input type="number" id="mobileTime" class="form-control" placeholder="مدت استفاده (دقیقه)">
+        <h5 class="text-center mb-4">برنامه امروز (کلیک برای ثبت)</h5>
+        <div id="plan-container" class="text-center">در حال بارگذاری...</div>
+        
+        <div id="comp-section" class="d-none mt-4 pt-3 border-top">
+            <h6 class="text-primary small fw-bold">➕ درس جبرانی (خارج از برنامه)</h6>
+            <input type="text" id="extraBook" class="form-control" placeholder="نام کتاب...">
         </div>
-        <button class="btn-nav btn-next" onclick="goToStep(3)">مرحله بعد</button>
+        
+        <button class="btn-nav btn-next mt-4" onclick="goToStep(3)">مرحله بعد</button>
         <button class="btn-nav btn-back" onclick="goToStep(1)">بازگشت</button>
     </div>
 
     <div id="step-3" class="step-card text-center">
-        <h4 class="mb-2">انتخاب دروس امروز</h4>
-        <p class="small text-muted mb-4">دروسی که امروز مطالعه کردی را انتخاب کن:</p>
-        <div id="lesson-grid">در حال دریافت دروس مخصوص شما...</div>
-        <button class="btn-nav btn-next mt-4" onclick="goToStep(4)">تایید دروس</button>
+        <h5 class="mb-4">جمع‌بندی نهایی</h5>
+        <label>رضایت از خود (۱-۱۰):</label>
+        <input type="range" class="form-range mb-4" min="1" max="10" id="satSelf">
+        <label>رضایت از مشاور (۱-۱۰):</label>
+        <input type="range" class="form-range mb-4" min="1" max="10" id="satConsult">
+        <label>تراز آزمون (اگر داشتید):</label>
+        <input type="number" id="examScore" class="form-control text-center mb-4" placeholder="0">
+
+        <button class="btn-nav btn-next" style="background:#28a745" onclick="submitData()">🚀 ارسال گزارش</button>
         <button class="btn-nav btn-back" onclick="goToStep(2)">بازگشت</button>
-    </div>
-
-    <div id="step-4" class="step-card">
-        <h5 class="mb-4">آمار دروس تخصصی</h5>
-        <input type="number" id="studySpec" class="form-control mb-3" placeholder="ساعت مطالعه تخصصی">
-        <input type="number" id="testSpec" class="form-control mb-3" placeholder="تعداد تست تخصصی">
-        <input type="number" id="markedSpec" class="form-control mb-3" placeholder="تست مارکدار تخصصی">
-        <button class="btn-nav btn-next" onclick="goToStep(5)">بعدی</button>
-        <button class="btn-nav btn-back" onclick="goToStep(3)">بازگشت</button>
-    </div>
-
-    <div id="step-5" class="step-card text-center">
-        <h5 class="mb-4">رضایت از عملکرد امروزت (۱ تا ۵)</h5>
-        <input type="range" class="form-range mb-3" min="1" max="5" id="satSelf" oninput="v1.innerText=this.value">
-        <div class="display-5 text-primary fw-bold mb-5" id="v1">3</div>
-        
-        <h5 class="mb-4">رضایت از عملکرد مشاور (۱ تا ۵)</h5>
-        <input type="range" class="form-range mb-3" min="1" max="5" id="satConsult" oninput="v2.innerText=this.value">
-        <div class="display-5 text-success fw-bold" id="v2">3</div>
-
-        <button class="btn-nav btn-next mt-4" style="background:#28a745" onclick="submitData()">🚀 ثبت نهایی گزارش</button>
-        <button class="btn-nav btn-back" onclick="goToStep(4)">بازگشت</button>
     </div>
 
 </div>
 
+<div id="qModal" class="modal-overlay">
+    <div class="modal-box">
+        <h5 id="modalTitle" class="fw-bold mb-3"></h5>
+        <input type="number" id="testInput" class="form-control text-center mb-3" placeholder="تعداد...">
+        <button class="btn btn-primary w-100 rounded-3" onclick="confirmTest()">ثبت</button>
+    </div>
+</div>
+
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMgZw_YbVgPf6kvK1gOdgtaQw2e7NhNQKOXbJBPFx1nYhzS2ZyP112FdNVZomSqkx0/exec"; // آدرس نهایی اسکریپت را اینجا بگذارید
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsfbe4IcPNP9xcLtlfpvmN2SLkgycHLUSZMS8K3RgnlC98kyDRw-8rakmMYbb_Jnhq/exec";
     const profile = JSON.parse(localStorage.getItem("profile") || "{}");
-    document.getElementById('user-display').innerText = profile.firstName || "دانش‌آموز";
+    let dailyPlan = [];
+    let specSum = 0, genSum = 0;
+    let activeIndex = null;
 
     function goToStep(s) {
         document.querySelectorAll('.step-card').forEach(c => c.classList.remove('active'));
         document.getElementById('step-' + s).classList.add('active');
-        document.getElementById('main-progress').style.width = ((s-1)/4 * 100) + '%';
-        if(s === 3) fetchBooks();
+        document.getElementById('main-progress').style.width = ((s-1)/2 * 100) + '%';
+        if(s === 2) loadDailyPlan();
     }
 
-    function toggleMobile(el) {
-        el.classList.toggle('active');
-        document.getElementById('mobile-input-box').classList.toggle('d-none');
-    }
-
-    // دریافت دروس از شیت Books بر اساس رشته و پایه دانش‌آموز
-    async function fetchBooks() {
-        const grid = document.getElementById('lesson-grid');
+    async function loadDailyPlan() {
+        const week = document.getElementById('weekNum').value;
+        const grid = document.getElementById('plan-container');
+        grid.innerHTML = '<div class="spinner-border text-primary"></div>';
+        
         try {
             const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "getBooks",
-                    field: profile.studyField,
-                    grade: profile.gradeLevel
-                })
+                method: 'POST', 
+                body: JSON.stringify({ action: "getDailyData", username: profile.username, week: week, dayName: "شنبه" }) // روز را می‌توانید داینامیک کنید
             });
-            const result = await res.json();
-            grid.innerHTML = "";
-            result.lessons.forEach(lesson => {
-                const chip = document.createElement('div');
-                chip.className = 'lesson-chip';
-                chip.innerText = lesson;
-                chip.onclick = function() { this.classList.toggle('selected'); };
-                grid.appendChild(chip);
-            });
-        } catch(e) { grid.innerHTML = "خطا در برقراری ارتباط با شیت Books"; }
+            const data = await res.json();
+            dailyPlan = data.plan;
+            
+            if(data.hasComp) document.getElementById('comp-section').classList.remove('d-none');
+            
+            grid.innerHTML = dailyPlan.map((l, i) => `
+                <div class="plan-item" id="item-${i}" onclick="openModal(${i})">
+                    <div class="text-end">
+                        <small class="text-muted">${l.time}</small><br>
+                        <strong>${l.cleanName}</strong>
+                    </div>
+                    <span id="badge-${i}">⚪</span>
+                </div>
+            `).join('');
+            
+        } catch(e) { grid.innerHTML = "خطا در دریافت برنامه"; }
+    }
+
+    function openModal(index) {
+        activeIndex = index;
+        const lesson = dailyPlan[index];
+        document.getElementById('modalTitle').innerText = lesson.isGen ? "تعداد سوال عمومی؟" : "تعداد تست تخصصی؟";
+        document.getElementById('qModal').style.display = 'flex';
+        document.getElementById('testInput').value = '';
+        document.getElementById('testInput').focus();
+    }
+
+    function confirmTest() {
+        const val = parseInt(document.getElementById('testInput').value) || 0;
+        if(dailyPlan[activeIndex].isGen) genSum += val;
+        else specSum += val;
+
+        // ذخیره لوکال برای نمایش در کارتکس
+        let stats = JSON.parse(localStorage.getItem('today_stats') || '{}');
+        stats[dailyPlan[activeIndex].time] = val;
+        localStorage.setItem('today_stats', JSON.stringify(stats));
+
+        document.getElementById(`item-${activeIndex}`).classList.add('done');
+        document.getElementById(`badge-${activeIndex}`).innerText = '✅';
+        document.getElementById('qModal').style.display = 'none';
     }
 
     async function submitData() {
-        const selectedLessons = Array.from(document.querySelectorAll('.lesson-chip.selected')).map(el => el.innerText).join(' - ');
         const data = {
             action: "saveReport",
             username: profile.username,
             week: document.getElementById('weekNum').value,
-            selectedLessons: selectedLessons,
-            studySpec: document.getElementById('studySpec').value,
-            testSpec: document.getElementById('testSpec').value,
-            markedSpec: document.getElementById('markedSpec').value,
+            studySpec: 0, studyGen: 0, // فعلا صفر چون کاربر فقط تست وارد کرده
+            testSpec: specSum, 
+            testGen: genSum,
+            extraBook: document.getElementById('extraBook').value,
+            examScore: document.getElementById('examScore').value || 0,
             satSelf: document.getElementById('satSelf').value,
             satConsult: document.getElementById('satConsult').value,
-            mobileTime: document.getElementById('mobileTime').value || 0
+            mobileTime: 0, habits: "" // این‌ها را می‌توان از صفحه habits گرفت
         };
 
         try {
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            alert("آفرین " + profile.firstName + "! گزارش امروزت با موفقیت ثبت شد.");
+            alert("گزارش با موفقیت ثبت شد!");
             location.href = "index.html";
-        } catch(e) { alert("گزارش ثبت شد."); location.href = "index.html"; }
+        } catch(e) { alert("ثبت شد."); location.href = "index.html"; }
     }
 </script>
 </body>
